@@ -1,6 +1,6 @@
 services:
     coolify:
-        container_name: coolifi
+        container_name: coolify
         restart: always
         working_dir: /var/www/html
         extra_hosts:
