@@ -1,11 +1,8 @@
 services:
   coolify:
-    image: "${REGISTRY_URL:-ghcr.io}/coollabsio/coolify:${LATEST_IMAGE:-latest}"
+    image: "${REGISTRY_URL:-ghcr.io}/${IMAGE_NAMESPACE:-naudefirst}/${IMAGE_NAME:-airdrive-cloud}:${LATEST_IMAGE:-latest}"
+
     volumes:
-      - type: bind
-        source: /data/coolify/source/.env
-        target: /var/www/html/.env
-        read_only: true
       - /data/coolify/ssh:/var/www/html/storage/app/ssh
       - /data/coolify/applications:/var/www/html/storage/app/applications
       - /data/coolify/databases:/var/www/html/storage/app/databases
@@ -13,14 +10,19 @@ services:
       - /data/coolify/backups:/var/www/html/storage/app/backups
       - /data/coolify/webhooks-during-maintenance:/var/www/html/storage/app/webhooks-during-maintenance
     environment:
-      - APP_ENV=${APP_ENV:-production}
-      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-256M}
-      - PHP_FPM_PM_CONTROL=${PHP_FPM_PM_CONTROL:-dynamic}
-      - PHP_FPM_PM_START_SERVERS=${PHP_FPM_PM_START_SERVERS:-1}
-      - PHP_FPM_PM_MIN_SPARE_SERVERS=${PHP_FPM_PM_MIN_SPARE_SERVERS:-1}
-      - PHP_FPM_PM_MAX_SPARE_SERVERS=${PHP_FPM_PM_MAX_SPARE_SERVERS:-10}
-    env_file:
-      - /data/coolify/source/.env
+      APP_ENV: ${APP_ENV:-production}
+      PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT:-256M}
+      PHP_FPM_PM_CONTROL: ${PHP_FPM_PM_CONTROL:-dynamic}
+      PHP_FPM_PM_START_SERVERS: ${PHP_FPM_PM_START_SERVERS:-1}
+      PHP_FPM_PM_MIN_SPARE_SERVERS: ${PHP_FPM_PM_MIN_SPARE_SERVERS:-1}
+      PHP_FPM_PM_MAX_SPARE_SERVERS: ${PHP_FPM_PM_MAX_SPARE_SERVERS:-10}
+      DB_CONNECTION: pgsql
+      DB_HOST: coolify-db
+      DB_PORT: 5432
+      DB_DATABASE: airdrive_cloud
+      DB_USERNAME: postgres
+      DB_PASSWORD: a19650902?
+      REDIS_PASSWORD: a19650902?
     ports:
       - "${APP_PORT:-8000}:8080"
     expose:
@@ -37,31 +39,37 @@ services:
         condition: service_healthy
       soketi:
         condition: service_healthy
+
   postgres:
+    image: postgres:15-alpine
     volumes:
       - coolify-db:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: "${DB_USERNAME}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
-      POSTGRES_DB: "${DB_DATABASE:-coolify}"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: a19650902?
+      POSTGRES_DB: airdrive_cloud
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME}", "-d", "${DB_DATABASE:-coolify}" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d airdrive_cloud"]
       interval: 5s
       retries: 10
       timeout: 2s
+
   redis:
-    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    image: redis:7-alpine
+    container_name: coolify-redis
+    command: ["sh", "-c", "exec redis-server --save 20 1 --loglevel warning --requirepass \"$REDIS_PASSWORD\""]
     environment:
-      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      REDIS_PASSWORD: a19650902?
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli -a $REDIS_PASSWORD ping"]
+      interval: 5s
+      retries: 10
+      timeout: 2s
     volumes:
       - coolify-redis:/data
-    healthcheck:
-      test: redis-cli ping
-      interval: 5s
-      retries: 10
-      timeout: 2s
+
   soketi:
-    image: '${REGISTRY_URL:-ghcr.io}/coollabsio/coolify-realtime:1.0.8'
+    image: "${REGISTRY_URL:-ghcr.io}/coollabsio/coolify-realtime:1.0.8"
     ports:
       - "${SOKETI_PORT:-6001}:6001"
       - "6002:6002"

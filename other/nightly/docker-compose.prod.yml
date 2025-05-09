@@ -1,6 +1,6 @@
 services:
   coolify:
-    image: "${REGISTRY_URL:-ghcr.io}/coollabsio/coolify:${LATEST_IMAGE:-latest}"
+    image: "${REGISTRY_URL:-ghcr.io}/${IMAGE_NAMESPACE:-naudefirst}/${IMAGE_NAME:-airdrive-cloud}:${LATEST_IMAGE:-latest}"
     volumes:
       - type: bind
         source: /data/coolify/source/.env
@@ -62,18 +62,18 @@ services:
       timeout: 2s
   soketi:
       image: '${REGISTRY_URL:-ghcr.io}/coollabsio/coolify-realtime:1.0.8'
-    ports:
+      ports:
       - "${SOKETI_PORT:-6001}:6001"
       - "6002:6002"
-    volumes:
+      volumes:
       - /data/coolify/ssh:/var/www/html/storage/app/ssh
-    environment:
+      environment:
       APP_NAME: "${APP_NAME:-Coolify}"
       SOKETI_DEBUG: "${SOKETI_DEBUG:-false}"
       SOKETI_DEFAULT_APP_ID: "${PUSHER_APP_ID}"
       SOKETI_DEFAULT_APP_KEY: "${PUSHER_APP_KEY}"
       SOKETI_DEFAULT_APP_SECRET: "${PUSHER_APP_SECRET}"
-    healthcheck:
+      healthcheck:
       test: [ "CMD-SHELL", "wget -qO- http://127.0.0.1:6001/ready && wget -qO- http://127.0.0.1:6002/ready || exit 1" ]
       interval: 5s
       retries: 10
