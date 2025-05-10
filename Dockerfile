@@ -96,7 +96,7 @@ RUN mkdir -p /usr/local/bin && \
     chmod +x /usr/local/bin/cloudflared
 
 # Configure PHP
-COPY docker/production/etc/php/conf.d/zzz-custom-php.ini /usr/local/etc/php/conf.d/zzz-custom-php.ini
+COPY docker/production/etc/conf.d/zzz-custom-php.ini /usr/local/etc/php/conf.d/zzz-custom-php.ini
 ENV PHP_OPCACHE_ENABLE=1
 
 # Configure entrypoint
